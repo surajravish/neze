@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>NEZE – Next-Gen Traffic Management</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --accent: #7dd3ff;
+      --accent-2: #4ade80;
+      --text-main: #e5e7eb;
+      --muted: #9ca3af;
+      --nav-bg: #020617cc;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #020617;
+      color: var(--text-main);
+      min-height: 100vh;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* GLOBAL BG */
+    .page-bg {
+      position: fixed;
+      inset: 0;
+      z-index: -2;
+      background:
+        linear-gradient(135deg, rgba(56,189,248,0.18), transparent 55%),
+        linear-gradient(225deg, rgba(168,85,247,0.15), transparent 60%),
+        url("bg-traffic.jpg") center/cover no-repeat;
+      filter: saturate(1.05) contrast(1.03);
+      pointer-events: none;
+      will-change: transform;
+      transition: transform 0.15s linear;
+    }
+    .page-bg::before {
+      content: "";
+      position: absolute;
+      inset: -40px;
+      background-image:
+        radial-gradient(circle at 15% 20%, rgba(56,189,248,0.25), transparent 60%),
+        radial-gradient(circle at 80% 70%, rgba(74,222,128,0.25), transparent 65%),
+        radial-gradient(circle at 50% 120%, rgba(15,23,42,0.9), transparent 70%);
+      mix-blend-mode: screen;
+      opacity: 0.9;
+      animation: bgDrift 30s ease-in-out infinite alternate;
+    }
+    .page-bg::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        repeating-linear-gradient(to right, rgba(15,23,42,0.55), rgba(15,23,42,0.55) 1px, transparent 1px, transparent 40px),
+        repeating-linear-gradient(to bottom, rgba(15,23,42,0.55), rgba(15,23,42,0.55) 1px, transparent 1px, transparent 40px);
+      opacity: 0.22;
+      mix-blend-mode: soft-light;
+    }
+    @keyframes bgDrift {
+      0%   { transform: translate3d(0,0,0) scale(1);   opacity: 0.95; }
+      100% { transform: translate3d(-40px,-25px,0) scale(1.05); opacity: 1; }
+    }
+
+    /* NAVBAR */
+    .nav-wrapper { position: sticky; top: 0; z-index: 40; }
+    .navbar {
+      max-width: 1200px; margin: 0.5rem auto 0;
+      padding: 0.75rem 1.5rem;
+      display: flex; align-items: center; justify-content: space-between;
+      backdrop-filter: blur(16px);
+      background: var(--nav-bg);
+      border-radius: 999px;
+      box-shadow: 0 12px 35px rgba(0,0,0,0.35);
+      transition: box-shadow 0.3s ease, transform 0.3s ease, background 0.3s ease;
+    }
+    .navbar.scrolled {
+      transform: translateY(-4px);
+      box-shadow: 0 18px 45px rgba(0, 0, 0, 0.7);
+      background: #020617ee;
+    }
+    .logo {
+      display: flex; align-items: center; gap: .6rem;
+      font-weight: 800; letter-spacing: .15em; text-transform: uppercase;
+      font-size: .85rem;
+    }
+    .logo img { height: 40px; border-radius: 999px; }
+    .nav-links { display: flex; align-items: center; gap: 2rem; font-size: 0.95rem; }
+    .nav-link {
+      position: relative; cursor: pointer; color: #e5e7eb; text-decoration: none;
+    }
+    .nav-link::after {
+      content: ""; position: absolute; left: 0; bottom: -0.25rem;
+      width: 0; height: 2px;
+      background: linear-gradient(90deg, #22d3ee, #38bdf8, #6366f1);
+      border-radius: 999px; transition: width .25s;
+    }
+    .nav-link:hover::after { width: 100%; }
+
+    .dropdown { position: relative; }
+    .dropdown-menu {
+      position: absolute; top: 2.1rem; right: 50%;
+      transform: translateX(50%) scale(.9); transform-origin: top center;
+      background: #020617f2; border-radius: 1rem; padding: .75rem;
+      width: 260px;
+      box-shadow: 0 18px 50px rgba(0,0,0,.75);
+      opacity: 0; pointer-events: none;
+      transition: opacity .2s, transform .2s;
+    }
+    .dropdown:hover .dropdown-menu {
+      opacity: 1; transform: translateX(50%) scale(1); pointer-events: auto;
+    }
+    .dropdown-item {
+      padding: .6rem .75rem; border-radius: .75rem;
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: .9rem; cursor: pointer;
+      transition: background .2s, transform .2s;
+      color: var(--text-main);
+      text-decoration: none;
+    }
+    .dropdown-item span.badge {
+      font-size: .7rem; padding: 0.15rem 0.4rem;
+      border-radius: 999px;
+      background: rgba(56,189,248,.15);
+      border: 1px solid rgba(56,189,248,.6);
+      text-transform: uppercase; letter-spacing: .08em;
+    }
+    .dropdown-item:hover {
+      background: rgba(30,64,175,.8); transform: translateY(-1px);
+    }
+
+    /* HERO */
+    .hero {
+      max-width: 1200px;
+      margin: 3.5rem auto 4rem;
+      padding: 0 1.5rem 4rem;
+      position: relative; overflow: hidden;
+    }
+    .blob {
+      position: absolute; border-radius: 999px; filter: blur(40px);
+      opacity: 0.35; z-index: -1; mix-blend-mode: screen;
+      background: radial-gradient(circle at center, #38bdf8, transparent 60%);
+      animation: float 18s infinite alternate ease-in-out;
+    }
+    .blob.blob-1 { width: 380px; height: 380px; top: -60px; left: -120px; }
+    .blob.blob-2 {
+      width: 420px; height: 420px; bottom: -120px; right: -80px;
+      background: radial-gradient(circle at center, #22c55e, transparent 65%);
+      animation-duration: 22s;
+    }
+    @keyframes float { from{transform:translate3d(0,0,0);} to{transform:translate3d(40px,-30px,0);} }
+
+    .hero-inner {
+      display: grid; grid-template-columns: minmax(0,2fr) minmax(0,1.6fr);
+      gap: 3rem; align-items: center;
+    }
+    @media(max-width:960px){
+      .hero-inner{grid-template-columns:1fr;text-align:center;}
+    }
+    .badge-tag{
+      display:inline-flex;align-items:center;gap:.4rem;
+      padding:.25rem .75rem;border-radius:999px;
+      border:1px solid rgba(148,163,184,.7);
+      background:rgba(15,23,42,.9);
+      font-size:.75rem;color:var(--muted);
+      letter-spacing:.08em;text-transform:uppercase;
+      margin-bottom:1.25rem;backdrop-filter:blur(10px);
+    }
+    .badge-dot{
+      width:8px;height:8px;border-radius:999px;
+      background:var(--accent-2);box-shadow:0 0 12px rgba(74,222,128,.9);
+    }
+    .hero-title{
+      font-size:clamp(2.6rem,4vw,3.3rem);
+      line-height:1.05;font-weight:800;
+      text-transform:uppercase;letter-spacing:.12em;
+    }
+    .hero-title span.main{
+      background:linear-gradient(120deg,#22d3ee,#60a5fa,#a855f7);
+      -webkit-background-clip:text;color:transparent;
+      text-shadow:0 0 28px rgba(56,189,248,.6);
+      animation:glowPulse 3.2s ease-in-out infinite;
+    }
+    .hero-title span.sub{color:#c7d2fe;text-shadow:0 12px 35px rgba(15,23,42,.8);}
+    @keyframes glowPulse{
+      0%,100%{text-shadow:0 0 22px rgba(56,189,248,.7);}
+      50%{text-shadow:0 0 40px rgba(129,140,248,1);}
+    }
+    .hero-desc{margin-top:1.5rem;color:var(--muted);font-size:.98rem;max-width:36rem;}
+    .trending{display:flex;align-items:center;gap:1rem;margin-top:2.25rem;flex-wrap:wrap;}
+    .trending-label{
+      font-size:.9rem;color:var(--muted);display:flex;align-items:center;gap:.6rem;
+    }
+    .trending-label::after{
+      content:"";width:60px;height:1px;background:linear-gradient(90deg,#4b5563,transparent);
+    }
+    .pill-row{display:flex;flex-wrap:wrap;gap:.75rem;}
+    .pill{
+      padding:.5rem 1.1rem;border-radius:999px;
+      border:1px solid rgba(148,163,184,.55);
+      background:radial-gradient(circle at top left,rgba(56,189,248,.25),rgba(15,23,42,.98));
+      font-size:.85rem;cursor:pointer;
+      transition:transform .18s,box-shadow .18s,border-color .18s;
+      box-shadow:0 10px 30px rgba(15,23,42,.9);
+    }
+    .pill.active{
+      border-color:rgba(74,222,128,.9);
+      box-shadow:0 0 22px rgba(45,212,191,.9);
+    }
+    .pill::before{content:"●";margin-right:.35rem;font-size:.55rem;opacity:.7;}
+    .pill:hover{transform:translateY(-2px) scale(1.02);box-shadow:0 16px 40px rgba(15,23,42,.95);}
+
+    .hero-card{
+      position:relative;background:radial-gradient(circle at top,#1f2937,#020617);
+      border-radius:2rem;padding:1.75rem 1.5rem;min-height:260px;
+      border:1px solid rgba(148,163,184,.35);
+      box-shadow:0 20px 50px rgba(15,23,42,.95);overflow:hidden;
+    }
+    .hero-card::before{
+      content:"";position:absolute;inset:-40%;
+      background:
+        radial-gradient(circle at 20% 20%,rgba(56,189,248,.16),transparent 60%),
+        radial-gradient(circle at 80% 70%,rgba(129,140,248,.25),transparent 55%);
+      opacity:.8;mix-blend-mode:screen;pointer-events:none;
+    }
+    .card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;position:relative;z-index:1;}
+    .card-title{font-size:.85rem;text-transform:uppercase;letter-spacing:.16em;color:var(--muted);}
+    .dot-pulse{width:9px;height:9px;border-radius:999px;background:#22c55e;position:relative;}
+    .dot-pulse::after{
+      content:"";position:absolute;inset:-4px;border-radius:inherit;
+      border:1px solid rgba(45,212,191,.7);animation:ping 1.1s infinite;
+    }
+    @keyframes ping{0%{transform:scale(1);opacity:.9;}100%{transform:scale(1.8);opacity:0;}}
+
+    .radar-circle{
+      position:relative;width:210px;height:210px;border-radius:999px;
+      border:1px dashed rgba(148,163,184,.4);margin:0 auto;
+      display:grid;place-items:center;overflow:hidden;
+    }
+    .radar-circle::before{
+      content:"";position:absolute;width:100%;height:100%;border-radius:inherit;
+      background:conic-gradient(from 0deg,rgba(56,189,248,.4),transparent 40%,transparent 100%);
+      animation:sweep 3.8s linear infinite;mix-blend-mode:screen;
+    }
+    @keyframes sweep{to{transform:rotate(360deg);}}
+    .radar-ring{
+      position:absolute;width:70%;height:70%;border-radius:999px;
+      border:1px solid rgba(59,130,246,.4);
+    }
+    .radar-dot{
+      position:absolute;width:8px;height:8px;border-radius:999px;
+      background:#22d3ee;box-shadow:0 0 18px rgba(34,211,238,1);
+      animation:blink 1.4s infinite alternate;
+    }
+    .radar-dot.dot-1{top:22%;left:63%;}
+    .radar-dot.dot-2{bottom:18%;right:22%;animation-delay:.5s;}
+    .radar-dot.dot-3{bottom:25%;left:18%;animation-delay:.9s;}
+    @keyframes blink{from{opacity:.4;transform:scale(.9);}to{opacity:1;transform:scale(1.1);}}
+    .pill-small-row{margin-top:1.4rem;display:flex;flex-wrap:wrap;gap:.6rem;font-size:.75rem;position:relative;z-index:1;}
+    .pill-small{
+      padding:.25rem .75rem;border-radius:999px;
+      background:rgba(15,23,42,.8);border:1px solid rgba(148,163,184,.4);
+    }
+
+    /* SIMPLE FEATURED PRODUCT STRIP ON HOME */
+    .home-products {
+      max-width: 1200px; margin: 0 auto 3rem; padding: 0 1.5rem;
+    }
+    .home-products-title {
+      font-size: 1.2rem; margin-bottom: 1rem; letter-spacing: .15em; text-transform: uppercase;
+    }
+    .home-products-grid {
+      display: grid; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); gap: 1.25rem;
+    }
+    .home-product-card {
+      background:#020617ee;border-radius:1rem;
+      border:1px solid rgba(148,163,184,.45);
+      padding:1rem 1.25rem;
+      box-shadow:0 12px 30px rgba(0,0,0,.7);
+      transition:transform .18s,box-shadow .18s,border-color .18s;
+    }
+    .home-product-card:hover{
+      transform:translateY(-4px);border-color:#22d3ee;
+      box-shadow:0 18px 40px rgba(0,0,0,.9);
+    }
+    .home-product-name{font-weight:600;margin-bottom:.35rem;}
+    .home-product-tag{font-size:.8rem;color:#a5b4fc;margin-bottom:.6rem;}
+    .home-product-text{font-size:.85rem;color:#e5e7ebc9;margin-bottom:.75rem;}
+    .home-product-link{
+      font-size:.8rem;text-transform:uppercase;letter-spacing:.12em;
+      color:#7dd3ff;text-decoration:none;
+    }
+
+    /* CLIENTS (logo circles without images) */
+    .clients-section {
+      background: #020617f2;
+      padding: 70px 20px 80px;
+      border-top: 1px solid rgba(31,41,55,0.9);
+      backdrop-filter: blur(10px);
+    }
+    .clients-inner { max-width:1200px; margin:0 auto; text-align:center; }
+    .clients-title {
+      font-size: 28px; letter-spacing: .25em; text-transform: uppercase; margin-bottom: 12px;
+    }
+    .clients-sub { font-size: .9rem; color: #9ca3af; margin-bottom: 32px; }
+    .clients-strip { position:relative; overflow:hidden; }
+    .clients-track { display:flex; gap:40px; animation:clientsScroll 35s linear infinite; }
+    .clients-section:hover .clients-track { animation-play-state:paused; }
+    @keyframes clientsScroll { 0%{transform:translateX(0);}100%{transform:translateX(-50%);} }
+    .client-logo{
+      width:120px;height:120px;border-radius:50%;
+      border:2px solid rgba(190,242,100,.9);
+      background-image:
+        radial-gradient(circle at 30% 20%,#4ade80,transparent 60%),
+        radial-gradient(circle at 70% 80%,#22d3ee,transparent 60%);
+      background-color:#020617;
+      display:flex;align-items:center;justify-content:center;
+      flex-shrink:0;box-shadow:0 10px 30px rgba(0,0,0,.8);
+      cursor:pointer;position:relative;overflow:hidden;
+      transition:transform .22s,box-shadow .22s,border-color .22s;
+    }
+    .client-logo::before{
+      content:"";position:absolute;inset:12px;border-radius:inherit;
+      background:radial-gradient(circle at 30% 10%,rgba(248,250,252,.25),transparent 60%);
+      opacity:.8;
+    }
+    .client-code{
+      position:relative;font-size:32px;font-weight:800;
+      letter-spacing:.08em;text-transform:uppercase;
+      color:#f9fafb;text-shadow:0 0 14px rgba(15,23,42,.9);
+    }
+    .client-logo:hover{
+      transform:translateY(-6px) scale(1.06);
+      box-shadow:0 16px 40px rgba(0,0,0,.95);
+      border-color:#bef264;
+    }
+    .client-logo.is-active{
+      box-shadow:0 0 25px rgba(190,242,100,.9);
+      border-color:#a3e635;
+    }
+    .client-info{margin-top:28px;text-align:center;}
+    .client-info-name{font-size:1rem;font-weight:600;color:#e5e7eb;}
+    .client-info-tag{font-size:.85rem;color:#9ca3af;margin-top:4px;}
+    @media(max-width:768px){
+      .clients-track{animation-duration:45s;gap:24px;}
+      .client-logo{width:90px;height:90px;}
+      .client-code{font-size:24px;}
+      .clients-title{letter-spacing:.18em;font-size:22px;}
+    }
+
+    /* STATS */
+    .stats-section {
+      background: #020617f7;
+      padding: 80px 20px 90px;
+      text-align: center;
+      border-top: 1px solid rgba(15,23,42,0.9);
+      backdrop-filter: blur(8px);
+    }
+    .stats-inner { max-width:1200px;margin:0 auto; }
+    .stats-kicker{color:var(--accent-2);font-size:22px;margin-bottom:8px;font-style:italic;}
+    .stats-title{font-size:32px;text-transform:uppercase;letter-spacing:.15em;margin-bottom:50px;}
+    .stats-grid{display:flex;flex-wrap:wrap;justify-content:center;gap:30px;}
+    .stat-card{
+      background:#bfdbfe;min-width:260px;max-width:320px;
+      padding:40px 32px;border-radius:32px;
+      box-shadow:0 14px 40px rgba(15,23,42,.8);
+      transition:transform .22s,box-shadow .22s;
+    }
+    .stat-card:nth-child(2){background:#dbeafe;}
+    .stat-card:hover{
+      transform:translateY(-8px) scale(1.02);
+      box-shadow:0 20px 60px rgba(15,23,42,.95);
+    }
+    .stat-number{font-size:42px;font-weight:800;color:#1d4ed8;margin-bottom:12px;}
+    .stat-label{font-size:16px;color:#1e293b;}
+    @media(max-width:768px){
+      .stats-title{font-size:24px;letter-spacing:.12em;}
+      .stat-card{min-width:230px;padding:30px 24px;}
+      .stat-number{font-size:34px;}
+    }
+
+    /* FOOTER */
+    .footer-section{
+      background:#111827;padding:50px 20px 25px;
+      border-top:1px solid rgba(15,23,42,.95);
+    }
+    .footer-card{
+      max-width:1200px;margin:0 auto;background:#020617;
+      border-radius:24px;padding:32px 32px 26px;
+      display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,2fr);
+      gap:3rem;color:#e5e7eb;box-shadow:0 18px 40px rgba(0,0,0,.9);
+    }
+    @media(max-width:900px){
+      .footer-card{grid-template-columns:1fr;padding:26px 22px 22px;}
+    }
+    .footer-logo-text{font-size:32px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;margin-bottom:12px;}
+    .footer-tagline{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:#9ca3af;margin-bottom:40px;}
+    .footer-glow{
+      width:200px;height:200px;border-radius:999px;
+      background:radial-gradient(circle,rgba(148,163,196,.55),transparent 60%);
+      filter:blur(4px);opacity:.45;margin-bottom:30px;
+    }
+    .footer-address{font-size:13px;line-height:1.7;color:#d1d5db;}
+    .footer-right{display:flex;justify-content:space-between;gap:3rem;align-items:flex-start;font-size:14px;}
+    @media(max-width:900px){
+      .footer-right{flex-wrap:wrap;gap:2rem;}
+    }
+    .footer-column h4{margin-bottom:10px;font-size:15px;font-weight:600;}
+    .footer-list{list-style:disc;padding-left:18px;color:#d1d5db;}
+    .footer-list li{margin-bottom:4px;}
+    .footer-list a{color:inherit;text-decoration:none;}
+    .footer-list a:hover{text-decoration:underline;}
+    .footer-follow-title{color:#bef264;font-weight:600;margin-bottom:6px;}
+    .footer-social a{display:inline-block;margin-right:14px;font-size:14px;text-decoration:none;}
+    .footer-social a.footer-linkedin{color:#3b82f6;}
+    .footer-social a.footer-instagram{color:#f97316;}
+    .footer-social a:hover{opacity:.9;text-decoration:underline;}
+    .footer-copy{max-width:1200px;margin:10px auto 0;text-align:right;font-size:12px;color:#9ca3af;}
+    @media(max-width:900px){.footer-copy{text-align:center;margin-top:16px;}}
+  </style>
+</head>
+<body>
+  <div class="page-bg" id="pageBg"></div>
+
+  <!-- NAVBAR -->
+  <div class="nav-wrapper">
+    <header class="navbar" id="navbar">
+      <div class="logo">
+        <img src="logo-neze.png" alt="NEZE logo">
+        <span>NEZE</span>
+      </div>
+      <nav class="nav-links">
+        <div class="dropdown">
+          <span class="nav-link">Products ▾</span>
+          <div class="dropdown-menu">
+            <a class="dropdown-item" href="product.html?product=anpr">
+              <span>ANPR</span><span class="badge">AI Vision</span>
+            </a>
+            <a class="dropdown-item" href="product.html?product=lidar">
+              <span>Lidar Device</span><span class="badge">New</span>
+            </a>
+            <a class="dropdown-item" href="product.html?product=radar2d">
+              <span>2D Radar</span><span class="badge">Range</span>
+            </a>
+            <a class="dropdown-item" href="product.html?product=radar4d">
+              <span>4D Radar</span><span class="badge">Trending</span>
+            </a>
+            <a class="dropdown-item" href="product.html?product=bodycam">
+              <span>Bodyworn Camera</span><span class="badge">Live</span>
+            </a>
+            <a class="dropdown-item" href="product.html?product=interceptor">
+              <span>Interceptor</span><span class="badge">On-field</span>
+            </a>
+          </div>
+        </div>
+        <a class="nav-link" href="about.html">About Us</a>
+        <a class="nav-link" href="gallery.html">Gallery</a>
+        <a class="nav-link" href="contact.html">Contact Us</a>
+        <a class="nav-link" href="support.html">Support</a>
+      </nav>
+    </header>
+  </div>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="hero-inner">
+      <div>
+        <div class="badge-tag">
+          <span class="badge-dot"></span>
+          <span>AI-Powered Traffic Intelligence</span>
+        </div>
+        <h1 class="hero-title">
+          <span class="main">NEXT-GEN TRAFFIC</span><br>
+          <span class="sub">MANAGEMENT BY NEZE</span>
+        </h1>
+        <p class="hero-desc">
+          NEZE builds smart enforcement devices and software for modern cities:
+          from ANPR to 4D Radars and interceptor vehicles – everything in one
+          connected ecosystem.
+        </p>
+        <div class="trending">
+          <div class="trending-label">Trending Today</div>
+          <div class="pill-row" id="pillRow">
+            <button class="pill active">4D Radar</button>
+            <button class="pill">2D Radar</button>
+            <button class="pill">Interceptor</button>
+            <button class="pill">ANPR</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero-card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Live Enforcement Snapshot</div>
+            <div style="font-size:0.78rem;color:var(--muted);margin-top:0.25rem;">
+              Avg Detection Latency: <span style="color:var(--accent-2)">18ms</span>
+            </div>
+          </div>
+          <div class="dot-pulse"></div>
+        </div>
+        <div class="radar-circle">
+          <div class="radar-ring"></div>
+          <div class="radar-dot dot-1"></div>
+          <div class="radar-dot dot-2"></div>
+          <div class="radar-dot dot-3"></div>
+        </div>
+        <div class="pill-small-row">
+          <div class="pill-small">Vehicle Count · 132/min</div>
+          <div class="pill-small">Overspeeding · 9</div>
+          <div class="pill-small">Lane Violations · 3</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOME PRODUCT STRIP -->
+  <section class="home-products">
+    <h2 class="home-products-title">KEY PRODUCTS</h2>
+    <div class="home-products-grid">
+      <article class="home-product-card">
+        <div class="home-product-name">NEZE ANPR Suite</div>
+        <div class="home-product-tag">AI Vision</div>
+        <div class="home-product-text">
+          High-accuracy automatic number plate recognition with on-device AI and
+          cloud dashboards.
+        </div>
+        <a class="home-product-link" href="product.html?product=anpr">View details →</a>
+      </article>
+
+      <article class="home-product-card">
+        <div class="home-product-name">Lidar Speed Device</div>
+        <div class="home-product-tag">New</div>
+        <div class="home-product-text">
+          Compact handheld lidar with long-range speed detection and HD evidence capture.
+        </div>
+        <a class="home-product-link" href="product.html?product=lidar">View details →</a>
+      </article>
+
+      <article class="home-product-card">
+        <div class="home-product-name">4D Mobile Radar</div>
+        <div class="home-product-tag">Trending</div>
+        <div class="home-product-text">
+          4D imaging radar for complex junctions, blind spots and harsh weather operations.
+        </div>
+        <a class="home-product-link" href="product.html?product=radar4d">View details →</a>
+      </article>
+
+      <article class="home-product-card">
+        <div class="home-product-name">Interceptor Vehicle</div>
+        <div class="home-product-tag">On-field</div>
+        <div class="home-product-text">
+          Fully equipped enforcement vehicle with ANPR, radar, bodycams and live streaming.
+        </div>
+        <a class="home-product-link" href="product.html?product=interceptor">View details →</a>
+      </article>
+    </div>
+  </section>
+
+  <!-- CLIENTS -->
+  <section class="clients-section">
+    <div class="clients-inner">
+      <h2 class="clients-title">OUR CLIENTS</h2>
+      <p class="clients-sub">Hover / tap on a logo to see who we work with</p>
+      <div class="clients-strip">
+        <div class="clients-track">
+          <!-- 10 client logos (no images; only initials) -->
+          <button class="client-logo is-active" data-name="Uttar Pradesh Police" data-tag="State Police">
+            <span class="client-code">UP</span>
+          </button>
+          <button class="client-logo" data-name="Delhi Police" data-tag="Metro City Police">
+            <span class="client-code">DP</span>
+          </button>
+          <button class="client-logo" data-name="Assam Police" data-tag="State Police">
+            <span class="client-code">AS</span>
+          </button>
+          <button class="client-logo" data-name="Indian Railways" data-tag="Railway Authority">
+            <span class="client-code">IR</span>
+          </button>
+          <button class="client-logo" data-name="NTPC" data-tag="Power & Energy">
+            <span class="client-code">NT</span>
+          </button>
+          <button class="client-logo" data-name="Indian Army" data-tag="Defence">
+            <span class="client-code">IA</span>
+          </button>
+          <button class="client-logo" data-name="Tata Steel" data-tag="Industrial">
+            <span class="client-code">TS</span>
+          </button>
+          <button class="client-logo" data-name="Lakshadweep Police" data-tag="Island Police">
+            <span class="client-code">LD</span>
+          </button>
+          <button class="client-logo" data-name="Maharashtra Police" data-tag="State Police">
+            <span class="client-code">MH</span>
+          </button>
+          <button class="client-logo" data-name="Railway Protection Force" data-tag="Railway Security">
+            <span class="client-code">RPF</span>
+          </button>
+          <!-- duplicate set -->
+          <button class="client-logo" data-name="Uttar Pradesh Police" data-tag="State Police">
+            <span class="client-code">UP</span>
+          </button>
+          <button class="client-logo" data-name="Delhi Police" data-tag="Metro City Police">
+            <span class="client-code">DP</span>
+          </button>
+          <button class="client-logo" data-name="Assam Police" data-tag="State Police">
+            <span class="client-code">AS</span>
+          </button>
+          <button class="client-logo" data-name="Indian Railways" data-tag="Railway Authority">
+            <span class="client-code">IR</span>
+          </button>
+          <button class="client-logo" data-name="NTPC" data-tag="Power & Energy">
+            <span class="client-code">NT</span>
+          </button>
+          <button class="client-logo" data-name="Indian Army" data-tag="Defence">
+            <span class="client-code">IA</span>
+          </button>
+          <button class="client-logo" data-name="Tata Steel" data-tag="Industrial">
+            <span class="client-code">TS</span>
+          </button>
+          <button class="client-logo" data-name="Lakshadweep Police" data-tag="Island Police">
+            <span class="client-code">LD</span>
+          </button>
+          <button class="client-logo" data-name="Maharashtra Police" data-tag="State Police">
+            <span class="client-code">MH</span>
+          </button>
+          <button class="client-logo" data-name="Railway Protection Force" data-tag="Railway Security">
+            <span class="client-code">RPF</span>
+          </button>
+        </div>
+      </div>
+      <div class="client-info">
+        <div class="client-info-name" id="clientInfoName">Uttar Pradesh Police</div>
+        <div class="client-info-tag" id="clientInfoTag">State Police</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STATS -->
+  <section class="stats-section">
+    <div class="stats-inner">
+      <div class="stats-kicker">see</div>
+      <h2 class="stats-title">WHAT THE STATS SAY</h2>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-number" data-counter data-target="150">0</div>
+          <div class="stat-label">Cities covered</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" data-counter data-target="500">0</div>
+          <div class="stat-label">Devices Delivered</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" data-counter data-target="50">0</div>
+          <div class="stat-label">Happy Clients</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <section class="footer-section">
+    <div class="footer-card">
+      <div>
+        <div class="footer-logo-text">NEZE</div>
+        <div class="footer-tagline">DRIVING INNOVATION, ENHANCING SAFETY</div>
+        <div class="footer-glow"></div>
+        <p class="footer-address">
+          E-520, Second Floor, Malik Plaza, Ramphal Chowk, Palam Extension,<br>
+          Sector-7, Dwarka, New Delhi-110075.
+        </p>
+      </div>
+      <div class="footer-right">
+        <div class="footer-column">
+          <h4>Products</h4>
+          <ul class="footer-list">
+            <li><a href="product.html?product=anpr">ANPR</a></li>
+            <li><a href="product.html?product=lidar">Lidar Device</a></li>
+            <li><a href="product.html?product=radar2d">2D Radar</a></li>
+            <li><a href="product.html?product=radar4d">4D Radar</a></li>
+            <li><a href="product.html?product=bodycam">Bodyworn Camera</a></li>
+            <li><a href="product.html?product=interceptor">Interceptor</a></li>
+          </ul>
+        </div>
+        <div class="footer-column">
+          <h4>Company</h4>
+          <ul class="footer-list">
+            <li><a href="about.html">About Us</a></li>
+            <li><a href="gallery.html">Gallery</a></li>
+            <li><a href="support.html">Support</a></li>
+          </ul>
+        </div>
+        <div class="footer-column">
+          <div class="footer-follow-title">Follow Us</div>
+          <div class="footer-social">
+            <a class="footer-linkedin" href="#" target="_blank">LinkedIn</a>
+            <a class="footer-instagram" href="#" target="_blank">Instagram</a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="footer-copy">Copyright © 2024 NEZE. All rights reserved.</p>
+  </section>
+
+  <script>
+    // navbar scroll
+    const navbar = document.getElementById("navbar");
+    window.addEventListener("scroll", () => {
+      if (window.scrollY > 10) navbar.classList.add("scrolled");
+      else navbar.classList.remove("scrolled");
+    });
+
+    // bg parallax
+    const pageBg = document.getElementById("pageBg");
+    document.addEventListener("pointermove", (e) => {
+      const x = (e.clientX / window.innerWidth - 0.5) * 18;
+      const y = (e.clientY / window.innerHeight - 0.5) * 18;
+      pageBg.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+    });
+
+    // pills active
+    document.querySelectorAll(".pill").forEach(pill => {
+      pill.addEventListener("click", () => {
+        document.querySelectorAll(".pill").forEach(p => p.classList.remove("active"));
+        pill.classList.add("active");
+      });
+    });
+
+    // stats counters
+    const counters = document.querySelectorAll("[data-counter]");
+    function animateCounter(el){
+      const target = parseInt(el.dataset.target,10);
+      let current = 0;
+      const duration = 1500;
+      const startTime = performance.now();
+      function update(now){
+        const progress = Math.min((now - startTime)/duration,1);
+        current = Math.floor(progress*target);
+        el.textContent = current + "+";
+        if(progress<1) requestAnimationFrame(update);
+      }
+      requestAnimationFrame(update);
+    }
+    if("IntersectionObserver" in window){
+      const obs = new IntersectionObserver(entries=>{
+        entries.forEach(entry=>{
+          if(entry.isIntersecting){
+            animateCounter(entry.target);
+            obs.unobserve(entry.target);
+          }
+        });
+      },{threshold:.4});
+      counters.forEach(c=>obs.observe(c));
+    } else {
+      counters.forEach(animateCounter);
+    }
+
+    // interactive client logos
+    const clientLogos = document.querySelectorAll(".client-logo");
+    const clientInfoName = document.getElementById("clientInfoName");
+    const clientInfoTag = document.getElementById("clientInfoTag");
+    function setClientInfo(btn){
+      clientLogos.forEach(b=>b.classList.remove("is-active"));
+      btn.classList.add("is-active");
+      clientInfoName.textContent = btn.dataset.name;
+      clientInfoTag.textContent = btn.dataset.tag;
+    }
+    clientLogos.forEach(btn=>{
+      btn.addEventListener("mouseenter",()=>setClientInfo(btn));
+      btn.addEventListener("click",()=>setClientInfo(btn));
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Contact NEZE</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body{margin:0;background:#020617;color:#e5e7eb;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}
+    a{color:#7dd3ff;text-decoration:none;}
+    .page{max-width:900px;margin:0 auto;padding:1.5rem;}
+    header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;}
+    .logo{display:flex;align-items:center;gap:.6rem;font-weight:800;letter-spacing:.15em;text-transform:uppercase;font-size:.85rem;}
+    .logo img{height:34px;border-radius:999px;}
+    h1{font-size:2rem;margin-bottom:.75rem;}
+    p{font-size:.95rem;color:#e5e7ebd0;margin-bottom:1rem;}
+
+    form{
+      margin-top:1rem;
+      background:#020617ee;border-radius:1.25rem;
+      border:1px solid rgba(148,163,184,.5);
+      padding:1.25rem 1.5rem 1.5rem;
+      box-shadow:0 14px 40px rgba(0,0,0,.85);
+    }
+    label{display:block;font-size:.85rem;margin:.5rem 0 .25rem;}
+    input,textarea,select{
+      width:100%;padding:.55rem .6rem;border-radius:.6rem;
+      border:1px solid rgba(75,85,99,.9);background:#020617;color:#e5e7eb;
+      font-family:inherit;font-size:.9rem;
+    }
+    textarea{min-height:120px;resize:vertical;}
+    button{
+      margin-top:1rem;padding:.55rem 1.4rem;border-radius:999px;
+      border:none;cursor:pointer;
+      background:linear-gradient(135deg,#22c55e,#4ade80);
+      color:#022c22;font-weight:600;font-size:.9rem;
+    }
+    .status{margin-top:.75rem;font-size:.9rem;}
+    .status.ok{color:#4ade80;}
+    .status.err{color:#f97373;}
+  </style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <div class="logo">
+      <img src="logo-neze.png" alt="NEZE">
+      <span>NEZE</span>
+    </div>
+    <a href="index.html">← Back to Home</a>
+  </header>
+
+  <h1>Contact / Client Request</h1>
+  <p>
+    Share your requirement and our team will reach out. You will also receive a
+    confirmation email with your request details.
+  </p>
+
+  <form id="contactForm">
+    <label for="name">Name *</label>
+    <input id="name" name="name" required>
+
+    <label for="email">Work Email *</label>
+    <input id="email" name="email" type="email" required>
+
+    <label for="org">Organisation</label>
+    <input id="org" name="organisation">
+
+    <label for="interest">Interested in</label>
+    <select id="interest" name="interest">
+      <option value="ANPR">ANPR</option>
+      <option value="Lidar">Lidar Device</option>
+      <option value="2D Radar">2D Radar</option>
+      <option value="4D Radar">4D Radar</option>
+      <option value="Bodyworn Camera">Bodyworn Camera</option>
+      <option value="Interceptor">Interceptor</option>
+      <option value="Other">Other / Not sure</option>
+    </select>
+
+    <label for="message">Requirement / Message *</label>
+    <textarea id="message" name="message" required></textarea>
+
+    <button type="submit">Submit Request</button>
+    <div class="status" id="formStatus"></div>
+  </form>
+</div>
+
+<script>
+  const form = document.getElementById("contactForm");
+  const statusEl = document.getElementById("formStatus");
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    statusEl.textContent = "Sending...";
+    statusEl.className = "status";
+    try {
+      const res = await fetch("http://localhost:4000/api/contact", {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({
+          name: form.name.value,
+          email: form.email.value,
+          organisation: form.org.value,
+          interest: form.interest.value,
+          message: form.message.value
+        })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        statusEl.textContent = "Thank you! Your request has been submitted.";
+        statusEl.className = "status ok";
+        form.reset();
+      } else {
+        statusEl.textContent = data.error || "Something went wrong.";
+        statusEl.className = "status err";
+      }
+    } catch (err) {
+      statusEl.textContent = "Unable to reach server. Check if backend is running.";
+      statusEl.className = "status err";
+    }
+  });
+</script>
+</body>
+</html>

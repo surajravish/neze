@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>NEZE Product</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body{margin:0;font-family:system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;background:#020617;color:#e5e7eb;}
+    a{color:#7dd3ff;text-decoration:none;}
+    .page{max-width:1100px;margin:0 auto;padding:1.5rem;}
+    header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;}
+    .logo{display:flex;align-items:center;gap:.6rem;font-weight:800;letter-spacing:.15em;text-transform:uppercase;font-size:.85rem;}
+    .logo img{height:34px;border-radius:999px;}
+    .back-link{font-size:.85rem;}
+    .hero-card{
+      background:#020617ee;border-radius:1.5rem;
+      border:1px solid rgba(148,163,184,.5);
+      padding:1.5rem 1.5rem 1.75rem;
+      box-shadow:0 16px 40px rgba(0,0,0,.9);
+    }
+    .product-name{font-size:1.6rem;font-weight:700;margin-bottom:.5rem;}
+    .product-tag{font-size:.85rem;color:#a5b4fc;text-transform:uppercase;letter-spacing:.18em;margin-bottom:1rem;}
+    .product-summary{font-size:.95rem;color:#e5e7ebd1;margin-bottom:1.5rem;}
+    .pill-row{display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:1.5rem;}
+    .pill{font-size:.75rem;padding:.25rem .75rem;border-radius:999px;border:1px solid rgba(148,163,184,.5);}
+    .layout{display:grid;grid-template-columns:2fr 1.5fr;gap:1.5rem;margin-top:1.75rem;}
+    @media(max-width:900px){.layout{grid-template-columns:1fr;}}
+    h3{margin:1.25rem 0 .6rem;font-size:1rem;}
+    ul{margin:0 0 .5rem 1.1rem;font-size:.9rem;color:#e5e7ebb8;}
+    .spec-table{width:100%;border-collapse:collapse;font-size:.9rem;margin-top:.5rem;}
+    .spec-table td{padding:.4rem .55rem;border-bottom:1px solid rgba(55,65,81,.7);}
+    .spec-table td:first-child{color:#9ca3af;width:45%;}
+    .cta-card{
+      background:#0b1120;border-radius:1rem;border:1px solid rgba(96,165,250,.6);
+      padding:1rem;margin-top:1.25rem;font-size:.9rem;
+    }
+    .cta-btn{
+      display:inline-block;margin-top:.6rem;
+      font-size:.85rem;padding:.4rem .9rem;
+      border-radius:999px;border:none;
+      background:linear-gradient(135deg,#22c55e,#4ade80);
+      color:#022c22;cursor:pointer;
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <div class="logo">
+      <img src="logo-neze.png" alt="NEZE">
+      <span>NEZE</span>
+    </div>
+    <a class="back-link" href="index.html">← Back to Home</a>
+  </header>
+
+  <section class="hero-card">
+    <div class="product-tag" id="productTag">PRODUCT</div>
+    <div class="product-name" id="productName">Loading…</div>
+    <p class="product-summary" id="productSummary"></p>
+    <div class="pill-row" id="productBadges"></div>
+
+    <div class="layout">
+      <div>
+        <h3>Key Features</h3>
+        <ul id="productFeatures"></ul>
+
+        <h3>Use-Cases</h3>
+        <ul id="productUseCases"></ul>
+      </div>
+      <div>
+        <h3>Technical Specs</h3>
+        <table class="spec-table" id="productSpecs"></table>
+
+        <div class="cta-card">
+          Want a live demo or pricing for this product?
+          <br>
+          <a href="contact.html" class="cta-btn">Request a demo</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+  // Product data
+  const products = {
+    anpr: {
+      name: "NEZE ANPR Suite",
+      tag: "AI Vision",
+      summary: "Automatic Number Plate Recognition solution with edge AI cameras, server software and cloud dashboards.",
+      badges: ["Edge & Cloud", "99%+ accuracy*", "Multi-language plates"],
+      features: [
+        "Real-time plate detection on-device with fallback cloud decoding.",
+        "Hotlist and watch-list matching with instant alerts.",
+        "Lane-wise and camera-wise traffic analytics dashboards.",
+        "Supports IR illumination and low-light conditions."
+      ],
+      useCases: [
+        "City traffic enforcement and e-challan generation.",
+        "Toll plazas, parking, and access control.",
+        "High-security campuses and industrial plants."
+      ],
+      specs: {
+        "Supported streams": "RTSP / ONVIF / MP4",
+        "Plate formats": "India, Gulf, SE Asia (configurable)",
+        "Deployment": "On-prem, private cloud or SaaS",
+        "Integration": "REST API, Webhooks, CSV export"
+      }
+    },
+    lidar: {
+      name: "NEZE Lidar Speed Device",
+      tag: "New",
+      summary: "Handheld lidar speed gun for accurate speed measurement with evidence recording.",
+      badges: ["Handheld", "Long-range", "Battery powered"],
+      features: [
+        "Laser based speed detection with narrow beam.",
+        "HD snapshot / video capture of each violation.",
+        "Ergonomic design for long field use.",
+        "On-device storage and USB-C export."
+      ],
+      useCases: [
+        "Highway and urban speeding enforcement.",
+        "Temporary enforcement at accident black-spots."
+      ],
+      specs: {
+        "Speed range": "5 – 250 km/h",
+        "Range": "Up to 600 m (typical)",
+        "Battery": "Rechargeable Li-ion, 8 hrs",
+        "Evidence": "JPEG / MP4 with metadata"
+      }
+    },
+    radar2d: {
+      name: "NEZE 2D Radar with Display Board",
+      tag: "Range",
+      summary: "2D radar integrated with LED display board to show 'Your Speed' and classify vehicles.",
+      badges: ["Fixed install", "Display included", "Low power"],
+      features: [
+        "Accurate speed measurement using Doppler radar.",
+        "Vehicle classification (2-wheeler / car / heavy).",
+        "Configurable speed limit and message templates.",
+        "Data logging for later analysis."
+      ],
+      useCases: [
+        "School zones and residential streets.",
+        "Awareness campaigns and speed calming."
+      ],
+      specs: {
+        "Frequency": "24 GHz band",
+        "Mounting height": "3 – 6 m",
+        "Display size": "Customisable",
+        "Connectivity": "4G / Ethernet / Wi-Fi options"
+      }
+    },
+    radar4d: {
+      name: "NEZE 4D Imaging Radar",
+      tag: "Trending",
+      summary: "High-resolution 4D radar that builds a volumetric image of the traffic scene in real time.",
+      badges: ["All-weather", "High resolution", "Multi-target"],
+      features: [
+        "Detects position, speed and elevation of multiple targets.",
+        "Performs reliably in rain, fog, dust and night.",
+        "API for fusion with cameras and VMS.",
+        "Zone-based triggering for smart intersections."
+      ],
+      useCases: [
+        "Complex junctions and black-spots.",
+        "Tunnel and bridge monitoring.",
+        "Smart city adaptive signal control."
+      ],
+      specs: {
+        "Targets": "100+ simultaneous",
+        "Range": "Up to 200 m",
+        "Output": "Point cloud / tracking data",
+        "Interface": "Ethernet, JSON API"
+      }
+    },
+    bodycam: {
+      name: "NEZE Bodyworn Camera",
+      tag: "Live",
+      summary: "Rugged body camera with live streaming and automatic upload to evidence servers.",
+      badges: ["Rugged", "Low-light", "Live stream"],
+      features: [
+        "Full HD recording with wide dynamic range.",
+        "Encrypted storage with tamper-proof logs.",
+        "Docking station for mass charging and offload.",
+        "Live streaming over 4G / Wi-Fi."
+      ],
+      useCases: [
+        "Field policing and incident recording.",
+        "Crowd management and VIP security."
+      ],
+      specs: {
+        "Resolution": "1080p @ 30fps",
+        "Battery": "10–12 hrs typical",
+        "Storage": "64 / 128 GB",
+        "Ingress protection": "IP67 or better"
+      }
+    },
+    interceptor: {
+      name: "NEZE Interceptor Vehicle",
+      tag: "On-field",
+      summary: "Mobile enforcement vehicle integrating ANPR, radar, lidar and video for on-the-move enforcement.",
+      badges: ["Turn-key", "Multi-sensor", "Command center"],
+      features: [
+        "Roof-mounted cameras and radars with PTZ.",
+        "Inside console for live monitoring and ticketing.",
+        "Automatic number plate recognition while driving.",
+        "On-board recording and 4G backhaul."
+      ],
+      useCases: [
+        "Highway patrol and special drives.",
+        "VIP route security and event enforcement."
+      ],
+      specs: {
+        "Platform": "Customer vehicle or NEZE supplied",
+        "Power": "Inverter + battery bank",
+        "Operators": "2–3 officers",
+        "Integration": "State e-challan / Vahan APIs"
+      }
+    }
+  };
+
+  function renderProduct(key){
+    const p = products[key];
+    if(!p){
+      document.getElementById("productName").textContent = "Product not found";
+      document.getElementById("productSummary").textContent = "Invalid product key.";
+      return;
+    }
+    document.title = p.name + " – NEZE";
+    document.getElementById("productName").textContent = p.name;
+    document.getElementById("productTag").textContent = p.tag;
+    document.getElementById("productSummary").textContent = p.summary;
+
+    const badges = document.getElementById("productBadges");
+    badges.innerHTML = "";
+    p.badges.forEach(b=>{
+      const span = document.createElement("span");
+      span.className = "pill";
+      span.textContent = b;
+      badges.appendChild(span);
+    });
+
+    const featList = document.getElementById("productFeatures");
+    featList.innerHTML = "";
+    p.features.forEach(f=>{
+      const li = document.createElement("li");
+      li.textContent = f;
+      featList.appendChild(li);
+    });
+
+    const useList = document.getElementById("productUseCases");
+    useList.innerHTML = "";
+    p.useCases.forEach(u=>{
+      const li = document.createElement("li");
+      li.textContent = u;
+      useList.appendChild(li);
+    });
+
+    const specTable = document.getElementById("productSpecs");
+    specTable.innerHTML = "";
+    Object.entries(p.specs).forEach(([k,v])=>{
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td>${k}</td><td>${v}</td>`;
+      specTable.appendChild(tr);
+    });
+  }
+
+  const params = new URLSearchParams(location.search);
+  const key = params.get("product") || "anpr";
+  renderProduct(key);
+</script>
+</body>
+</html>
